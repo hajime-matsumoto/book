@@ -197,7 +197,8 @@ SSLCertificateKeyFile /etc/apache2/cert/server.key
 <div class="source-title">Apache設定例(ubuntu系)</div>
 <pre>
 /etc/apache2/sites-available/default-sslのSSLEngine onの付近
-SSLEngine on
+(ubuntu 12.04の場合44行目 )
+44 SSLEngine on
 SSLCertificateFile    /etc/apache2/cert/server.crt
 SSLCertificateKeyFile /etc/apache2/cert/server.key
 </pre>
@@ -205,19 +206,94 @@ SSLCertificateKeyFile /etc/apache2/cert/server.key
 </div><!-- /source -->
 
 <h3>SSLクライアント認証</h3>
-<p>証明書をインポートしたブラウザにしかアクセスを許可しない方法</p>
-<h4>クライアント認証ファイルを作成する</h4>
+<p>証明書をインポートしたブラウザにしかアクセスを許可しない方法です。
+先ほどのサーバ認証と同じ行程ですが、Common Nameにユーザの名前を入力する処が違います。
 <div class="source">
 <pre>
-# 秘密鍵の生成
-$ openssl genrsa -des3 -out client01.key 1024
-# CSRの生成
-$ openssl req -new -key client01.key -out client01.csr
-# CRTの生成
-$ openssl x509 -req -CA cacrtkey -CAkey ca.key -CAserial serial -in client01.csr -out client01.crt -days 365
+# 秘密鍵とリクエストの生成
+$ ./CA.pl -newreq
+Generating a 1024 bit RSA private key
+................++++++
+.................................++++++
+writing new private key to 'newkey.pem'
+Enter PEM pass phrase:<span class="variable">[パスフレーズ]</span>
+Verifying - Enter PEM pass phrase:<span class="variable">[パスフレーズ]</span>
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:<span class="variable">2桁の国コード(ex. JP)</span>
+State or Province Name (full name) [Some-State]:<span class="variable">都道府県</span>
+Locality Name (eg, city) []:<span class="variable">街など</span>
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:<span class="variable">組織名</span>
+Organizational Unit Name (eg, section) []:<span class="variable">部署名</span>
+Common Name (e.g. server FQDN or YOUR name) []:<span class="variable">ユーザ名</span>
+Email Address []:<span class="variable">メールアドレス</span>
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+Request is in newreq.pem, private key is in newkey.pem
+
+# 署名
+$ ./CA.pl -sign
+Using configuration from /usr/lib/ssl/openssl.cnf
+Enter pass phrase for ./demoCA/private/cakey.pem:
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+        Serial Number: 12339842371822973424 (0xab3fed4204d271f0)
+        Validity
+            Not Before: Jan 24 07:17:50 2013 GMT
+            Not After : Jan 24 07:17:50 2014 GMT
+        Subject:
+            countryName               = 入力したもの
+            stateOrProvinceName       = 入力したもの
+            organizationName          = 入力したもの
+            organizationalUnitName    = 入力したもの
+            commonName                = 入力したもの
+            emailAddress              = 入力したもの
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:FALSE
+            Netscape Comment: 
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier: 
+                13:13:95:6A:E3:0A:F9:9A:9C:8C:DE:E7:15:A1:E8:FE:5C:93:26:5A
+            X509v3 Authority Key Identifier: 
+                keyid:BA:66:9A:54:40:AC:90:B2:58:67:38:D8:8F:14:B4:A3:1F:E0:4C:6B
+
+Certificate is to be certified until Jan 24 07:17:50 2014 GMT (365 days)
+Sign the certificate? [y/n]:<span class="variable">y</span>
+
+
+1 out of 1 certificate requests certified, commit? [y/n]<span class="variable">y</span>
+Write out database with 1 new entries
+Data Base Updated
+Signed certificate is in newcert.pem
+
+# PKCS12形式のクライアント証明書生成
+$ ./CA.pl -pkcs12 <span class="veriable">user01</span>
+Enter pass phrase for newkey.pem:
+Enter Export Password:
+Verifying - Enter Export Password:
+PKCS #12 file is in newcert.p12
+
+# 生成ファイルのバックアップ
+$ mkdir -p demoCA/certs/user01
+$ cp new* demoCA/certs/user01/
+# 配布用にリネーム
+$ cp demoCA/certs/user01/newcert.p12 user01.p12
 </pre>
 </div><!-- /source -->
+<p>
+上記方法で生成された。証明書を持つユーザのみにアクセスを限定する。
+</p>
 
 </body>
 </html>
-
