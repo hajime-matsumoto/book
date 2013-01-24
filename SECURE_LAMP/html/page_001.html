@@ -1,0 +1,103 @@
+<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">
+<html xmlns=\"http://www.w3.org/1999/xhtml\">
+<head>
+<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=utf-8\" />
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />
+<title>セキュアなLAMP環境の構築</title>
+</head>
+<body>
+
+<h2>SSL</h2>
+<p>SSLを使用する設定を書いてゆく<p>
+
+<h3>CA構築</h3>
+<h4>ディレクトリの準備</h4>
+<p>
+CAを構築するには、ディレクトリファイルなどの準備をする必要がある
+例では、/usr/local/ssl/demoをCAの拠点とする。
+</p>
+
+<div class="source">
+<pre>
+$ mkdir -p /usr/local/ssl/demo
+$ cd /usr/local/ssl/demo
+$ echo '00' > serial # シリアル情報格納ファイル
+$ touch index.txt # ファイルデータベース初期化
+$ date | openssl dgst > random.dat # 乱数ファイル作成
+</pre>
+</div><!-- /source -->
+<p>
+以上の処理で基本部分は完了だが、
+自分でCAを立てている場合はブラウザから不正なCAとして疑われるので、
+CA証明書をder形式に変換し、ブラウザにインポートする
+</p>
+<div class="source">
+<pre>
+openssl x509 -in ca.crt -out ca_plustar.der -outform der
+</pre>
+</div><!-- /source -->
+
+<h4>CAの鍵認証を作成</h4>
+<p>
+以下の処理でCAの秘密鍵と証明書を作成する。
+処理は全て前項で作成したディレクトリで行う。
+</p>
+<div class="source">
+<pre>
+# CA秘密鍵の生成
+$ openssl genrsa -des3 -rand random.dat -out $NAME/ca.key 1024
+# 署名要求(CSR)の生成
+$ openssl req -new -key ca.key -out ca.csr
+# 署名済証明書(CRT)の生成
+$ cat ca.csr | openssl x509 -req -signkey ca.key -out ca.crt -days 365
+</pre>
+</div><!-- /source -->
+
+<h3>サーバ認証</h3>
+<p>
+サーバ用の秘密鍵とCSRを作成し、CAで署名する。
+秘密鍵の名前はapacheとした。
+</p>
+<div class="source">
+<pre>
+# 秘密鍵の生成
+$ openssl genrsa -out apache.key 1024
+# CSRの生成
+$ openssl req -new -key apache.key -out apache.csr
+# CRTの生成
+$ openssl x509 -req -CA cacrtkey -CAkey ca.key -CAserial serial -in apache.csr -out apache.crt -days 365
+</pre>
+</div><!-- /source -->
+
+<p>
+ここで生成されたapache.keyとapache.crtをapacheサーバーに適用する。
+生成されたファイルをここでは/etc/apache2/cert/にコピーする。
+</p>
+<div class="source">
+<pre>
+$ mkdir -p /etc/apach2/cert
+#
+# Bashまめ知識
+# ブレース展開とか使う
+# {cp apache.key apache.crt /etc/apache2/cert/と同じ事}
+$ cp apache.{key,crt} /etc/apache2/cert/
+</pre>
+</div><!-- /source -->
+
+
+<div class="source">
+<div class="source-title">Apache設定例</div>
+<pre>
+SSLEngine on↲
+SSLCertificateFile    /etc/apache2/cert/server.crt↲
+SSLCertificateKeyFile /etc/apache2/cert/server.key
+</pre>
+</div><!-- /source-title -->
+</div><!-- /source -->
+
+
+<h3>SSLクライアント認証</h3>
+</body>
+</html>
+
