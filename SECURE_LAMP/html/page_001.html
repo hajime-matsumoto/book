@@ -293,12 +293,12 @@ $ cp demoCA/certs/user01/newcert.p12 user01.p12
 </div><!-- /source -->
 <p>
 上記方法で生成された。証明書を持つユーザのみにアクセスを限定する。
-例では、phpmyadminへアクセス出来るユーザを限定する。
+例では、phpmyadminへアクセス出来るユーザを限定する場合
 </p>
 
 <div class="source">
 <pre>
-&gt;Directory /usr/share/phpmyadmin&lt;
+&lt;Directory /usr/share/phpmyadmin&gt;
 	SSLRequireSSL
 	SSLVerifyClient require
 	SSLCACertificateFile /usr/local/ssl/demoCA/cacert.pem
