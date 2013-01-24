@@ -46,7 +46,7 @@ openssl x509 -in ca.crt -out ca_plustar.der -outform der
 <div class="source">
 <pre>
 # CA秘密鍵の生成
-$ openssl genrsa -des3 -rand random.dat -out $NAME/ca.key 1024
+$ openssl genrsa -des3 -rand random.dat -out ca.key 1024
 # 署名要求(CSR)の生成
 $ openssl req -new -key ca.key -out ca.csr
 # 署名済証明書(CRT)の生成
